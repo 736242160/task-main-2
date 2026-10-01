@@ -1,0 +1,33 @@
+# 库房（A 库容量 2，验证容量超限）
+warehouse A库 2
+warehouse B库 3
+
+# 放射源定义
+source S1 I   A库
+source S2 II  B库
+source S3 III B库
+source S9 I   不存在库          # 引用不存在的库
+
+# 领用流
+checkout S1 核医学科 张三 40  C-01
+checkout S1 放疗科   李四 60       # 使用中重复领用
+checkout S2 放疗科   王五 1000
+checkout S8 放疗科   王五 1000     # 引用不存在的源
+
+# 归还流
+return C-01                    # S1 正常归还
+return C-01                    # 重复归还（记录已关闭）
+return GHOST                   # 不存在的领用记录
+
+# 检测流：S2 有效限值 = min(II 类 200, 领用 1000) = 200，250 超限 → 停用 + 强制关闭领用
+inspect S2 250
+checkout S2 放疗科 王五 300     # 停用源禁止领用
+inspect S7 10                  # 不存在的源
+inspect S3 50                  # III 类限值 1000，正常
+
+# 容量：S1 归还后 A 库 S1 + S4，S5 入库触发容量 2 超限
+source S4 I A库
+source S5 I A库
+
+# 盘点 B 库：台账在库有 S3，实盘只报 S2（S2 已停用不在库），S3 判丢失
+stocktake B库 S2
