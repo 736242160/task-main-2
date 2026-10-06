@@ -1,0 +1,35 @@
+# ---- 分区定义: A -> B -> C 串联（A的流出M1即B的流入M1，B的流出M2即C的流入M2） ----
+ZONE A M0 M1
+ZONE B M1 M2
+ZONE C M2 M3
+# ---- 泵站定义（P_BAD 故意引用不存在的分区，用于错误演示） ----
+PUMP P1 A 2
+PUMP P2 B 1
+PUMP P_BAD NOPE 1
+# ---- 计量流: A 进出差 20 m3/h，超过 max(5, 120*10%=12) -> 判漏水 ----
+METER M0 120
+METER M1 100
+METER M2 96
+METER M3 95
+# ---- 监测流: A 实测压力明显下降；Z 为不存在分区 ----
+MONITOR A 0.18
+MONITOR Z 0.20
+SNAPSHOT
+# ---- A 爆管: 关进水、P1 停机，B/C 压力级联重算 ----
+EVENT BURST A
+SNAPSHOT
+# ---- 爆管期间的异常输入 ----
+EVENT BURST A
+METER M9 50
+METER M3 150
+# ---- A 修复恢复: P1 重新投运，压力沿 A->B->C 级联恢复 ----
+EVENT RECOVER A
+SNAPSHOT
+# ---- 修复后各计量点重新读数，进出平衡，漏失清除 ----
+METER M0 120
+METER M1 118
+METER M2 116
+METER M3 115
+SNAPSHOT
+# ---- 无爆管却恢复 -> 错误 ----
+EVENT RECOVER A
